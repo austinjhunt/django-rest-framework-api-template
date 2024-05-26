@@ -1,0 +1,34 @@
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0 # Use the ref you want to point at
+    hooks:
+      - id: trailing-whitespace # Trims trailing whitespace.
+      - id: end-of-file-fixer # Makes sure files end in a newline and only a newline.
+      - id: check-yaml
+      - id: check-added-large-files # Prevent giant files from being committed.
+      - id: check-merge-conflict # Check for files that contain merge conflict strings.
+      - id: check-docstring-first # Checks for a common error of placing code before the docstring.
+      - id: check-ast # Check that Python files parse.
+      - id: check-builtin-literals # Forbid use of builtin types as literals.
+      - id: check-json
+      - id: requirements-txt-fixer # Sorts entries in requirements.txt and pyproject.toml.
+      - id: pretty-format-json # Checks that all your JSON files are pretty.
+      - id: detect-aws-credentials
+
+  # Using this mirror lets us use mypyc-compiled black, which is about 2x faster
+  - repo: https://github.com/psf/black
+    rev: 24.2.0
+    hooks:
+      - id: black
+        args: [--line-length=100]
+
+  - repo: https://github.com/pycqa/isort
+    # isort is a code formatter that sorts imports automatically.
+    # It is a very popular package and has been used by Django since 2015.
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: [--profile=black]

@@ -1,0 +1,9 @@
+.DS_Store
+.env
+digibooksbackend/__pycache__/
+venv
+__pycache__
+*.sqlite3
+.vscode
+.coverage
+*.pem

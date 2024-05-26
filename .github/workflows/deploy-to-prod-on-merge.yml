@@ -1,0 +1,56 @@
+name: Deploy to production on PR merge with main
+
+on:
+  pull_request:
+    types: [ closed ]
+    branches: [ main ]
+
+jobs:
+  deploy:
+    # Only deploy to production on merge with main
+    if: github.event.pull_request.merged == true and false
+    runs-on: ubuntu-latest
+    env:
+      APP_NAME: digibooks-backend
+      PRODUCTION_ENV_NAME: digibooks-backend-production
+      AWS_DEFAULT_REGION: us-west-2
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Generate deployment package
+        run: zip -r deploy.zip . -x '*.git*'
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Delete preview environments (where env name starts with digibooks-backend-preview)
+        run: |
+          environments=$(aws elasticbeanstalk describe-environments \
+            --no-include-deleted \
+            --query "Environments[?starts_with(EnvironmentName, 'digibooks-backend-preview')].[EnvironmentName]" \
+            --output text)
+          echo "Deleting preview environments: $environments"
+          for env in $environments; do
+            echo "Deleting environment: $env"
+            aws elasticbeanstalk terminate-environment --environment-name "$env"
+          done
+
+      - name: Deploy to EB production environment
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: ${{ env.APP_NAME }}
+          environment_name: ${{ env.PRODUCTION_ENV_NAME }}
+          region: ${{ env.AWS_DEFAULT_REGION }}
+          deployment_package: deploy.zip
+          use_existing_version_if_available: true
+          # set the version label to the last label that was added to the PR that is being merged
+          # this requires that the PR has a label! If it doesn't, this will fail.
+          version_label: ${{ github.event.pull_request.labels[0].name }}

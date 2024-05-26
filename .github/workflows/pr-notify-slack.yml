@@ -1,0 +1,54 @@
+name: Notify members of PR
+on:
+  pull_request:
+    types:
+      - review_requested
+jobs:
+  amhajja_notify:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.requested_reviewer.login == 'amhajja'}}
+    steps:
+      - name: "Sending Slack Notification to amhajja"
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "text": "<@U05UY9X8ZSR>, your review is requested for a *digibooks-backend* PR: <${{github.event.pull_request.html_url}}|${{github.event.pull_request.title}}> opened by ${{github.event.pull_request.user.login}} :computer: :smile:",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<@U05UY9X8ZSR>, your review is requested for a *digibooks-backend* PR: <${{github.event.pull_request.html_url}}|${{github.event.pull_request.title}}> opened by ${{github.event.pull_request.user.login}} :computer: :smile:"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+  austinjhunt_notify:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.requested_reviewer.login == 'austinjhunt'}}
+    steps:
+      - name: "Sending Slack Notification to austinjhunt"
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          # For posting a rich message using Block Kit
+          payload: |
+            {
+              "text": "<@U05V3LKLNR2>, your review is requested for a *digibooks-backend* PR: <${{github.event.pull_request.html_url}}|${{github.event.pull_request.title}}> opened by ${{github.event.pull_request.user.login}} :computer: :smile:",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<@U05V3LKLNR2>, your review is requested for a *digibooks-backend* PR: <${{github.event.pull_request.html_url}}|${{github.event.pull_request.title}}> opened by ${{github.event.pull_request.user.login}} :computer: :smile:"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: https://hooks.slack.com/services/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
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

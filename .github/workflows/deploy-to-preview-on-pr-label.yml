@@ -1,0 +1,124 @@
+name: Create a preview EBS frontend environment and deploy there
+
+on:
+  pull_request:
+    types: [ labeled ]
+
+jobs:
+  build:
+    if: startsWith(github.event.label.name, 'preview-')
+    runs-on: ubuntu-latest
+    env:
+      # clean up the label name to make it a valid environment name
+
+      PREVIEW_ENV_NAME: digibooks-backend-preview-${{ github.event.label.name }} # replace . with - and remove any other invalid characters
+
+      PRODUCTION_ENV_NAME: digibooks-backend-production
+      APP_NAME: digibooks-backend
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Update PREVIEW_ENV_NAME to be a valid EBS environment name
+        run: |
+          echo "PREVIEW_ENV_NAME=$(echo $PREVIEW_ENV_NAME | sed 's/[^a-zA-Z0-9-]/-/g')" >> $GITHUB_ENV
+
+      - name: Generate deployment package
+        run: zip -r deploy.zip . -x '*.git*'
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Create a preview environment in EBS using new version label
+        run: |
+          aws elasticbeanstalk create-environment \
+            --application-name ${{ env.APP_NAME }} \
+            --template-name ${{ env.PRODUCTION_ENV_NAME }} \
+            --environment-name ${{ env.PREVIEW_ENV_NAME }} \
+            --cname-prefix ${{ env.PREVIEW_ENV_NAME }} \
+
+      - name: Wait for environment to be ready (after environment creation)
+        run: |
+          max_retries=30 # Maximum number of retries
+          delay=10 # Delay in seconds between each check
+          for (( i=0; i<max_retries; i++ )); do
+            echo "Checking if the environment is ready (attempt $((i+1))/$max_retries)..."
+            status=$(aws elasticbeanstalk describe-environments \
+                      --environment-names ${{ env.PREVIEW_ENV_NAME }} \
+                      --query 'Environments[0].Status' \
+                      --output text)
+            if [ "$status" = "Ready" ]; then
+              echo "Environment is ready."
+              break
+            fi
+            if [ $i -eq $((max_retries-1)) ]; then
+              echo "Environment did not become ready in time."
+              exit 1
+            fi
+            echo "Environment is in '$status' state. Waiting for $delay seconds..."
+            sleep $delay
+          done
+
+      - name: Copy environment variables from production to preview
+        run: |
+          PROD_ENV_VARS=$(aws elasticbeanstalk describe-configuration-settings \
+                          --environment-name ${{ env.PRODUCTION_ENV_NAME }} \
+                          --application-name ${{ env.APP_NAME }} \
+                          --query "ConfigurationSettings[0].OptionSettings[?Namespace=='aws:elasticbeanstalk:application:environment'].[OptionName,Value]" \
+                          --output text)
+          echo "Retrieved the following environment variables from production: $PROD_ENV_VARS"
+          UPDATE_FORMAT=''
+          for VAR in $PROD_ENV_VARS; do
+              KEY=$(echo $VAR | awk '{print $1}')
+              VALUE=$(echo $VAR | awk '{print $2}')
+              UPDATE_FORMAT+="$KEY=$VALUE,"
+          done
+          UPDATE_FORMAT=${UPDATE_FORMAT%?} # Remove the last comma
+          aws elasticbeanstalk update-environment --environment-name ${{ env.PREVIEW_ENV_NAME }} \
+            --option-settings Namespace=aws:elasticbeanstalk:application:environment,OptionName=$KEY,Value=$VALUE
+
+      - name: Wait for environment to be ready (again, after environment update)
+        run: |
+          max_retries=30 # Maximum number of retries
+          delay=10 # Delay in seconds between each check
+
+          for (( i=0; i<max_retries; i++ )); do
+            echo "Checking if the environment is ready (attempt $((i+1))/$max_retries)..."
+            status=$(aws elasticbeanstalk describe-environments \
+                      --environment-names ${{ env.PREVIEW_ENV_NAME }} \
+                      --query 'Environments[0].Status' \
+                      --output text)
+
+            if [ "$status" = "Ready" ]; then
+              echo "Environment is ready."
+              break
+            fi
+
+            if [ $i -eq $((max_retries-1)) ]; then
+              echo "Environment did not become ready in time."
+              exit 1
+            fi
+
+            echo "Environment is in '$status' state. Waiting for $delay seconds..."
+            sleep $delay
+          done
+
+      - name: Deploy this code to EB Preview environment ONLY IF all previous steps succeeded
+        if: ${{ success() }}
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: ${{ env.APP_NAME }}
+          environment_name: ${{ env.PREVIEW_ENV_NAME }}
+          version_label: ${{ github.event.label.name }}
+          region: ${{ env.AWS_DEFAULT_REGION }}
+          deployment_package: deploy.zip
