@@ -151,67 +151,6 @@ class TestSignUp(BaseTestCase):
         self.assertEqual(response.data.get("error"), "A user with this username already exists.")
 
 
-# @permission_classes([AllowAny])
-# class ActivateAccount(views.APIView):
-#     def get(self, request, uidb64, token):
-#         try:
-#             user = User.objects.get(pk=uidb64)
-#         except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
-#             logger.error(e)
-#             user = None
-
-#         if user and user.is_active:
-#             return Response(
-#                 {"message": "Account already activated!"},
-#                 status=200,
-#             )
-
-#         if user is not None and AccountActivationTokenGenerator().check_token(user, token):
-#             user.is_active = True
-#             user.save()
-#             logger.info(
-#                 {
-#                     "action": "ActivateAccount.get",
-#                     "user": user.username,
-#                     "message": "User activated successfully",
-#                 }
-#             )
-#             return Response(
-#                 {"message": "User activated successfully"},
-#                 status=200,
-#             )
-#         else:
-#             logger.error(f"User: {user}; activation failed!")
-#             return Response(
-#                 {"error": "Activation link is invalid!"},
-#                 status=400,
-#             )
-
-
-# class Logout(APIView):
-#     def post(self, request, format=None):
-#         request.user.auth_token.delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# class AuthCheck(APIView):
-#     def get(self, request):
-#         if request.user.is_anonymous:
-#             return Response({}, status=401)
-#         else:
-#             return Response(
-#                 {
-#                     "username": request.user.username,
-#                     "email": request.user.email,
-#                     "preferred_name": request.user.profile.preferred_name,
-#                 },
-#                 status=200,
-#             )
-
-
-# Test ActivateAccount view
-
-
 class TestActivateAccount(BaseTestCase):
     """
     Test for the ActivateAccount view
