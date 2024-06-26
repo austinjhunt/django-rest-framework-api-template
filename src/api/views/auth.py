@@ -140,6 +140,7 @@ class SignUp(APIView):
                     {
                         "message": f"Your account was created. Please check your email ({user.email}) for a link to activate your account.",
                         "user_id": user.id,
+                        "token": token,
                     },
                     status=status.HTTP_201_CREATED,
                 )
