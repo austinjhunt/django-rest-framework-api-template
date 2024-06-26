@@ -33,7 +33,7 @@ class SendPaymentCompleteConfirmation(APIView):
             email_sent = send_payment_complete_confirmation_email(
                 recipient=request.user.email,
                 first_name=request.user.first_name,
-                subject="Novabrains Enrollment Payment Confirmation",
+                subject=f"{settings.APP_NAME} Payment Confirmation",
                 course_title=course_title,
                 section_number=section_number,
                 payment_amount=payment_amount,

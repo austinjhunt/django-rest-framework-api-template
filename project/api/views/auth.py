@@ -13,7 +13,7 @@ from django.contrib.auth import authenticate
 from django.db import IntegrityError
 
 
-from api.serializers import SignUpSerializer
+from api.serializers import SignUpSerializer, LoginSerializer
 from api.tokens import AccountActivationTokenGenerator
 from api.util import send_activate_account_email
 
@@ -41,7 +41,7 @@ class ActivateAccount(views.APIView):
             user.save()
             logger.info(
                 {
-                    "action": "ActivateAccountView.get",
+                    "action": "ActivateAccount.get",
                     "user": user.username,
                     "message": "User activated successfully",
                 }
@@ -86,49 +86,33 @@ class AuthCheck(APIView):
 
 class Login(APIView):
     permission_classes = [AllowAny]
+    @extend_schema(
+        request=LoginSerializer,
+    )
 
     def post(self, request, format=None):
-        email = request.data.get("email")
-        password = request.data.get("password")
 
-        user = authenticate(request, username=email, password=password)
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if user is not None:
-            # if instructor, check if account is verified
-            if user.profile.is_instructor and not user.instructor.verified:
-                # return error message
-                logger.error(
-                    {
-                        "action": "LoginView.post",
-                        "error": "Instructor account has not been verified yet.",
-                    }
-                )
-                return Response(
-                    {
-                        "detail": "Instructor account has not been verified yet. We will send you an email to confirm once your account has been reviewed."
-                    },
-                    status=status.HTTP_401_UNAUTHORIZED,
-                )
+        username = serializer.validated_data.get("username")
+        password = serializer.validated_data.get("password")
+        user = authenticate(username=username, password=password)
+
+        if user is not None and user.is_active:
             token, _ = Token.objects.get_or_create(user=user)
             result = {
                 "token": token.key,
                 "username": user.username,
                 "email": user.email,
+                "preferred_name": user.profile.preferred_name,
             }
-
-            # Let's determine if the user is a student or an instructor (or both)
-            instructor = Instructor.objects.filter(user=user).first()
-            if instructor:
-                result.update({"instructor_id": instructor.id})
-
-            student = Student.objects.filter(user=user).first()
-            if student:
-                result.update({"student_id": student.id})
 
             return Response(result)
         else:
             return Response(
-                {"detail": "Invalid credentials (or account not activated yet)"},
+                {"detail": "Invalid credentials or account not activated yet"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -144,7 +128,7 @@ class SignUp(APIView):
                 token = AccountActivationTokenGenerator().make_token(user)
                 logger.info(
                     {
-                        "action": "UserSignUpAPIView.post",
+                        "action": "SignUp.post",
                         "message": "Account created successfully, must activate account with email link",
                     }
                 )
@@ -155,14 +139,6 @@ class SignUp(APIView):
                     activate_link=(f"{settings.FRONTEND_URL}/activate_account/{user.id}/{token}"),
                 )
 
-                # send admins an email to notify them of the new instructor request
-                # with a link to verify them
-                send_instructor_signup_request_notification_to_admins(requesting_user=user)
-
-                if role == "instructor":
-                    message = f"Your instructor account has been created. You will not be able to log into your account until the NovaBrains team manually reviews and verifies your instructor status, but go ahead and check your email ({user.email}) for a link to activate your account."
-                elif role == "student":
-                    message = f"Your account was created. Please check your email ({user.email}) for a link to activate your account."
 
                 return Response(
                     {
@@ -174,7 +150,7 @@ class SignUp(APIView):
             except Exception as e:
                 logger.error(
                     {
-                        "action": "UserSignUpAPIView.post",
+                        "action": "SignUp.post",
                         "error": str(e),
                     }
                 )
@@ -187,7 +163,7 @@ class SignUp(APIView):
         else:
             logger.error(
                 {
-                    "action": "UserSignUpAPIView.post",
+                    "action": "SignUp.post",
                     "error": serializer.errors,
                 }
             )

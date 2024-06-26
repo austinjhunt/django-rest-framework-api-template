@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 
-
-
 class Profile(models.Model):
     """
     Extension of the user model to store additional information about the user.
@@ -56,3 +54,11 @@ class Profile(models.Model):
         choices=PlanType.choices,
         default=PlanType.FREE,
     )
+
+    def format_json(self):
+        return {
+            "preferred_name": self.preferred_name,
+            "card_last4": self.card_last4,
+            "card_type": self.card_type,
+            "plan_type": self.plan_type,
+        }

@@ -7,6 +7,8 @@ from django.conf import settings
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from django.contrib.auth.models import User
+from api.models import Profile
 
 logger = logging.getLogger(settings.PRIMARY_LOGGER_NAME)
 
@@ -68,7 +70,7 @@ def send_email(recipient, subject, body):
         message = MIMEMultipart("alternative")
         message["to"] = recipient
         message["subject"] = subject
-        message["from"] = f"NovaBrains <{settings.SEND_FROM_EMAIL}>"
+        message["from"] = f"{settings.APP_NAME} <{settings.SEND_FROM_EMAIL}>"
 
         # Load the Jinja template
         template = jinja_env.get_template("master.html")
@@ -76,7 +78,14 @@ def send_email(recipient, subject, body):
         # Render the template
         # Render the template with variables
         ## allow body to be HTML
-        html_body = template.render(title=subject, header=subject, content=body)
+        html_body = template.render(
+            title=subject,
+            header=subject,
+            content=body,
+            frontend_url=settings.FRONTEND_URL,
+            frontend_brand_logo_image_url=settings.FRONTEND_BRAND_LOGO_IMAGE_URL,
+            app_name=settings.APP_NAME,
+        )
         # Attach both plain text and HTML versions of the message.
         part1 = MIMEText(body, "plain")
         part2 = MIMEText(html_body, "html")
@@ -200,12 +209,15 @@ def send_contact_us_received_acknowledgement_email(recipient, first_name, messag
     try:
         template = jinja_env.get_template("contact_us_received_acknowledgement.html")
         html_body = template.render(
-            first_name=first_name, message=message, submitted_at=submitted_at,
-            app_name=settings.APP_NAME, contact_email=settings.CONTACT_EMAIL
+            first_name=first_name,
+            message=message,
+            submitted_at=submitted_at,
+            app_name=settings.APP_NAME,
+            contact_email=settings.CONTACT_EMAIL,
         )
         return send_email(
             recipient=recipient,
-            subject="Thank You For Contacting NovaBrains!",
+            subject=f"Thank You For Contacting {settings.APP_NAME}!",
             body=html_body,
         )
     except Exception as e:
@@ -235,6 +247,7 @@ def send_payment_complete_confirmation_email(
             payment_amount=payment_amount,
             app_name=settings.APP_NAME,
             contact_email=settings.CONTACT_EMAIL,
+            frontend_url=settings.FRONTEND_URL,
         )
         return send_email(
             recipient=recipient,
@@ -244,3 +257,25 @@ def send_payment_complete_confirmation_email(
     except Exception as e:
         logger.error({"action": "send_payment_complete_confirmation_email", "error": str(e)})
         return None
+
+
+##############################
+## USER CREATION UTILITIES ###
+##############################
+
+
+def create_user(username, email, first_name, last_name, password, is_active=False):
+    # create user and profile
+    user = User.objects.create_user(
+        username=username,
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        password=password,
+    )
+    user.is_active = is_active
+    user.save()
+    profile = Profile.objects.create(user=user)
+    profile.save()
+
+    return user

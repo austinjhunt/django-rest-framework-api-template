@@ -43,3 +43,28 @@ class SignUpSerializer(serializers.Serializer):
         profile.save()
         return user
 
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        logger.info({"action": "UserLoginSerializer.validate", "data": data})
+        user = User.objects.filter(username=data.get("username")).first()
+        if user is None:
+            logger.error(
+                {
+                    "action": "UserLoginSerializer.validate",
+                    "error": "A user with this username does not exist.",
+                }
+            )
+            raise serializers.ValidationError("A user with this username does not exist.")
+        if not user.check_password(data.get("password")):
+            logger.error(
+                {
+                    "action": "UserLoginSerializer.validate",
+                    "error": "Incorrect password.",
+                }
+            )
+            raise serializers.ValidationError("Incorrect password.")
+        return data

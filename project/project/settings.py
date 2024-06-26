@@ -28,6 +28,7 @@ APP_NAME = os.getenv("APP_NAME", "project")
 ########################################
 PRODUCTION_FRONTEND_URL = os.getenv("PRODUCTION_FRONTEND_URL", None)
 FRONTEND_URL = PRODUCTION_FRONTEND_URL if DJANGO_ENV == "production" and PRODUCTION_FRONTEND_URL else "http://localhost:3000"
+FRONTEND_BRAND_LOGO_IMAGE_URL = os.getenv("FRONTEND_BRAND_LOGO_IMAGE_URL", "https://novabrains.ai/images/novabrains-logo.png")
 
 ########################################
 ######### AWS S3 SETTINGS #############
