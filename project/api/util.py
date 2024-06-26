@@ -279,3 +279,17 @@ def create_user(username, email, first_name, last_name, password, is_active=Fals
     profile.save()
 
     return user
+
+
+#####################################
+###### SERIALIZER UTILITIES #########
+#####################################
+
+def get_simple_serializer_error(serializer):
+    # flatten the error messages
+    error_message = ""
+    for key, value in serializer.errors.items():
+        error_message += f"{value[0]}"
+    return {
+        'error': error_message
+    }

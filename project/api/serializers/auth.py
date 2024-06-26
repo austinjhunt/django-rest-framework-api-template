@@ -1,12 +1,14 @@
 from django.conf import settings
 from rest_framework import serializers
+from api.serializers.base import BaseSerializer
 from api.models import User, Profile
+from api.util import get_simple_serializer_error
 import logging
 
 logger = logging.getLogger(settings.PRIMARY_LOGGER_NAME)
 
 
-class SignUpSerializer(serializers.Serializer):
+class SignUpSerializer(BaseSerializer):
 
     first_name = serializers.CharField()
     last_name = serializers.CharField()
@@ -14,13 +16,11 @@ class SignUpSerializer(serializers.Serializer):
     password = serializers.CharField()
 
     def validate(self, data):
-        logger.info({"action": "UserSignUpSerializer.validate", "data": data})
-
-        # if user already exists return error
+        logger.info({"action": "SignUpSerializer.validate", "data": data})
         if User.objects.filter(username=data.get("email")).exists():
             logger.error(
                 {
-                    "action": "UserSignUpSerializer.validate",
+                    "action": "SignUpSerializer.validate",
                     "error": "A user with this username already exists.",
                 }
             )
@@ -28,7 +28,7 @@ class SignUpSerializer(serializers.Serializer):
         return data
 
     def create(self, validated_data):
-        logger.info({"action": "UserSignUpSerializer.create", "validated_data": validated_data})
+        logger.info({"action": "SignUpSerializer.create", "validated_data": validated_data})
         # create a new user
         user = User.objects.create_user(
             username=validated_data.get("email"),
@@ -44,27 +44,19 @@ class SignUpSerializer(serializers.Serializer):
         return user
 
 
-class LoginSerializer(serializers.Serializer):
+class LoginSerializer(BaseSerializer):
     username = serializers.CharField()
     password = serializers.CharField()
 
     def validate(self, data):
-        logger.info({"action": "UserLoginSerializer.validate", "data": data})
+        logger.info({"action": "LoginSerializer.validate", "data": data})
         user = User.objects.filter(username=data.get("username")).first()
         if user is None:
             logger.error(
                 {
-                    "action": "UserLoginSerializer.validate",
+                    "action": "LoginSerializer.validate",
                     "error": "A user with this username does not exist.",
                 }
             )
             raise serializers.ValidationError("A user with this username does not exist.")
-        if not user.check_password(data.get("password")):
-            logger.error(
-                {
-                    "action": "UserLoginSerializer.validate",
-                    "error": "Incorrect password.",
-                }
-            )
-            raise serializers.ValidationError("Incorrect password.")
         return data

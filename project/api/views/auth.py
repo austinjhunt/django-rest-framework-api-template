@@ -6,6 +6,8 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 
+from drf_spectacular.utils import extend_schema
+
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -67,21 +69,15 @@ class AuthCheck(APIView):
     def get(self, request):
         if request.user.is_anonymous:
             return Response({}, status=401)
-
-        instructor = Instructor.objects.filter(user=request.user).first()
-        student = Student.objects.filter(user=request.user).first()
-
-        if instructor:
-            return Response({"account_type": "instructor"}, status=200)
-
-        elif student:
-            return Response({"account_type": "student"}, status=200)
-
-        elif request.user.is_superuser or request.user.is_staff:
-            return Response({"account_type": "admin"}, status=200)
-
         else:
-            return Response({}, status=401)
+            return Response(
+                {
+                    "username": request.user.username,
+                    "email": request.user.email,
+                    "preferred_name": request.user.profile.preferred_name,
+                },
+                status=200,
+            )
 
 
 class Login(APIView):
@@ -94,7 +90,7 @@ class Login(APIView):
 
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.get_simple_error(), status=status.HTTP_400_BAD_REQUEST)
 
         username = serializer.validated_data.get("username")
         password = serializer.validated_data.get("password")
@@ -112,7 +108,7 @@ class Login(APIView):
             return Response(result)
         else:
             return Response(
-                {"detail": "Invalid credentials or account not activated yet"},
+                {"error": "Invalid credentials or account not activated yet"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -121,7 +117,7 @@ class SignUp(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = UserSignUpSerializer(data=request.data)
+        serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             try:
                 user = serializer.save()
@@ -142,7 +138,7 @@ class SignUp(APIView):
 
                 return Response(
                     {
-                        "message": message,
+                        "message": f"Your account was created. Please check your email ({user.email}) for a link to activate your account.",
                         "user_id": user.id,
                     },
                     status=status.HTTP_201_CREATED,
@@ -167,4 +163,5 @@ class SignUp(APIView):
                     "error": serializer.errors,
                 }
             )
-            return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            # flatte
+            return Response(serializer.get_simple_error(), status=status.HTTP_400_BAD_REQUEST)

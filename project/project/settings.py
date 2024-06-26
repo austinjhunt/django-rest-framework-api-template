@@ -187,7 +187,7 @@ else:
             "HOST": os.getenv("DB_HOST"),
             "PORT": "",
             "TEST": {
-                "NAME": "digibooks_test",
+                "NAME": f"{APP_NAM.lower().replace(' ','_')}_test",
             },
         },
     }
