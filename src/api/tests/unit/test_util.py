@@ -1,8 +1,7 @@
 # Path: project/api/tests/unit/test_create_user.py
 
-from django.test import TestCase
-from api.tests.util import (
-    create_basic_test_user,
+from api.tests.base import (
+    BaseTestCase,
     TEST_USER_USERNAME,
     TEST_USER_EMAIL,
     TEST_USER_PASSWORD,
@@ -11,9 +10,9 @@ from api.tests.util import (
 )
 
 
-class TestCreateUser(TestCase):
+class TestCreateUser(BaseTestCase):
     def test_create_user(self):
-        user = create_basic_test_user()
+        user = self.create_basic_test_user()
         self.assertIsNotNone(user)
         self.assertEqual(user.username, TEST_USER_USERNAME)
         self.assertEqual(user.email, TEST_USER_EMAIL)

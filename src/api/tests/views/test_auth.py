@@ -1,17 +1,15 @@
 # Path: project/api/tests/views/test_auth.py
-from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
-from api.tests.util import (
-    create_basic_test_user,
+from api.tests.base import (
+    BaseTestCase,
     TEST_USER_USERNAME,
     TEST_USER_EMAIL,
     TEST_USER_PASSWORD,
     TEST_USER_FIRST_NAME,
     TEST_USER_LAST_NAME,
 )
-
-class TestLogin(APITestCase):
+class TestLogin(BaseTestCase):
     """
     Test for the Login view
     """
@@ -19,7 +17,7 @@ class TestLogin(APITestCase):
     def setUp(self):
         super().setUp()
         # user not active yet.
-        self.user = create_basic_test_user()
+        self.user = self.create_basic_test_user()
 
     def test_login_fail_not_active(self):
         """
@@ -59,7 +57,7 @@ class TestLogin(APITestCase):
         self.assertEqual(response.data.get("preferred_name"), self.user.profile.preferred_name)
 
 
-class TestSignUp(APITestCase):
+class TestSignUp(BaseTestCase):
     """
     Test for the SignUp view
     """
@@ -86,7 +84,7 @@ class TestSignUp(APITestCase):
         """
         Test signup fails when duplicate username is provided
         """
-        user = create_basic_test_user()
+        user = self.create_basic_test_user()
         response = self.client.post(
             reverse("api:signup"),
             {
