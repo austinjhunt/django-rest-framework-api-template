@@ -1,0 +1,6 @@
+This is a sample LLM prompt template built with Jinja. Please generate {{num_questions}} about this
+topic:
+{{topic}}
+and output them in the following JSON format:
+[{"q": "what is the capital of texas?", "a": "austin", "incorrect": ["houston", "dallas", "san
+antonio"]}, ...]
