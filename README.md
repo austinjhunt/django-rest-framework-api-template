@@ -1,4 +1,4 @@
-# Django Project Template
+# Django REST API - Project Template
 
 This repo contains a template Django project with templated logic for authentication, password management, [Stripe](https://stripe.com) payment processing, profile editing, [Google ReCAPTCHA](https://www.google.com/recaptcha/about/) token verification, [AWS Cloudwatch](https://aws.amazon.com/cloudwatch/) logging, [Slack](https://slack.com/) webhook-driven error alerting, [Sentry](https://sentry.io) monitoring, and more. It contains pre-written tests for authentication, password management, and profile (user model extension) management.
 
