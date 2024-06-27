@@ -32,7 +32,7 @@ class TestLogin(BaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
-            response.data.get("error"), "Invalid credentials or account not activated yet"
+            response.data.get("message"), "Invalid credentials or account not activated yet"
         )
 
     def test_login_fail_incorrect_credentials(self):
@@ -46,7 +46,7 @@ class TestLogin(BaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
-            response.data.get("error"), "Invalid credentials or account not activated yet"
+            response.data.get("message"), "Invalid credentials or account not activated yet"
         )
 
     def test_login_success(self):
@@ -60,9 +60,7 @@ class TestLogin(BaseTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsNotNone(response.data.get("token"))
-        self.assertEqual(response.data.get("username"), TEST_USER_USERNAME)
-        self.assertEqual(response.data.get("email"), TEST_USER_EMAIL)
-        self.assertEqual(response.data.get("preferred_name"), self.user.profile.preferred_name)
+
 
 class TestLogout(BaseTestCase):
     """
@@ -89,7 +87,6 @@ class TestLogout(BaseTestCase):
         # verify that the token is valid / user is logged in with auth-check
         response = self.client.get(reverse("api:auth-check"))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data.get("username"), TEST_USER_USERNAME)
 
         # use the token to logout
         response = self.client.post(reverse("api:logout"))
@@ -149,7 +146,7 @@ class TestSignUp(BaseTestCase):
             },
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get("error"), "A user with this username already exists.")
+        self.assertEqual(response.data.get("message"), "A user with this username already exists.")
 
 
 class TestActivateAccount(BaseTestCase):
@@ -169,7 +166,7 @@ class TestActivateAccount(BaseTestCase):
             reverse("api:activate-account", kwargs={"uidb64": "invalid", "token": "validtoken"})
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get("error"), "Activation link is invalid!")
+        self.assertEqual(response.data.get("message"), "Activation link is invalid!")
 
     def test_activate_account_fail_invalid_token(self):
         """
@@ -180,7 +177,7 @@ class TestActivateAccount(BaseTestCase):
             reverse("api:activate-account", kwargs={"uidb64": self.user.pk, "token": "invalidtoken"})
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data.get("error"), "Activation link is invalid!")
+        self.assertEqual(response.data.get("message"), "Activation link is invalid!")
 
     def test_activate_account_success_already_active(self):
         """

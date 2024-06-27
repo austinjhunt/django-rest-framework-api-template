@@ -62,7 +62,7 @@ class ActivateAccount(views.APIView):
         else:
             logger.error(f"User: {user}; activation failed!")
             return Response(
-                {"error": "Activation link is invalid!"},
+                {"message": "Activation link is invalid!"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -76,14 +76,9 @@ class Logout(APIView):
 class AuthCheck(APIView):
     def get(self, request):
         if request.user.is_anonymous:
-            return Response({}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response(
-                {
-                    "username": request.user.username,
-                    "email": request.user.email,
-                    "preferred_name": request.user.profile.preferred_name,
-                },
                 status=status.HTTP_200_OK,
             )
 
@@ -114,8 +109,6 @@ class Login(APIView):
             token, _ = Token.objects.get_or_create(user=user)
             result = {
                 "token": token.key,
-                "username": user.username,
-                "preferred_name": user.profile.preferred_name,
             }
 
             return Response(result)

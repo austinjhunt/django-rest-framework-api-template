@@ -264,7 +264,7 @@ def send_payment_complete_confirmation_email(
 ##############################
 
 
-def create_user(username, email, first_name, last_name, password, is_active=False):
+def create_user(username, email, first_name, last_name, password, is_active=False, bio="", preferred_name=""):
     # create user and profile
     user = User.objects.create_user(
         username=username,
@@ -275,7 +275,7 @@ def create_user(username, email, first_name, last_name, password, is_active=Fals
     )
     user.is_active = is_active
     user.save()
-    profile = Profile.objects.create(user=user)
+    profile = Profile.objects.create(user=user, bio=bio, preferred_name=preferred_name)
     profile.save()
 
     return user

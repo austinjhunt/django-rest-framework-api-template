@@ -21,6 +21,7 @@ class Profile(models.Model):
     """
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    bio = models.TextField(blank=True)
     preferred_name = models.CharField(max_length=50, blank=True)
     stripe_customer_id = models.CharField(max_length=50, null=True, blank=True)
     stripe_subscription_id = models.CharField(max_length=50, blank=True, null=True)
@@ -57,6 +58,10 @@ class Profile(models.Model):
 
     def format_json(self):
         return {
+            "first_name": self.user.first_name,
+            "last_name": self.user.last_name,
+            "email": self.user.email,
+            "bio": self.bio,
             "preferred_name": self.preferred_name,
             "card_last4": self.card_last4,
             "card_type": self.card_type,

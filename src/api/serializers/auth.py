@@ -67,5 +67,3 @@ class LoginRequestSerializer(BaseSerializer):
 
 class LoginResponseSerializer(BaseSerializer):
     token = serializers.CharField()
-    username = serializers.CharField()
-    preferred_name = serializers.CharField()

@@ -15,7 +15,7 @@ class CreatePaymentIntent(APIView):
     def post(self, request, *args, **kwargs):
         try:
             payment_intent = stripe.PaymentIntent.create(
-                amount=settings.ENROLL_IN_COURSE_SECTION_COST_CENTS,  # $10.00, this is in cents
+                amount=settings.PREMIUM_CHARGE_AMOUNT,
                 currency="usd",
                 payment_method_types=["card"],
             )
