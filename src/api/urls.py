@@ -40,9 +40,14 @@ urlpatterns = [
         name="verify-password-reset-token",
     ),
     path(
-        "set_new_password/",
-        password.SetNewPassword.as_view(),
-        name="set-new-password",
+        "set_new_password_anonymous/",
+        password.SetNewPasswordAnonymous.as_view(),
+        name="set-new-password-anonymous",
+    ),
+    path(
+        "set_new_password_authenticated/",
+        password.SetNewPasswordAuthenticated.as_view(),
+        name="set-new-password-authenticated",
     ),
 
 

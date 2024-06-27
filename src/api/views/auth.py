@@ -15,13 +15,20 @@ from django.contrib.auth import authenticate
 from django.db import IntegrityError
 
 
-from api.serializers import SignUpSerializer, LoginSerializer
+from api.serializers import (
+    MessageResponseSerializer,
+    SignUpRequestSerializer,
+    LoginRequestSerializer,
+    SignUpResponseSerializer,
+    LoginResponseSerializer,
+)
 from api.tokens import AccountActivationTokenGenerator
 from api.util import send_activate_account_email
 
 import logging
 
 logger = logging.getLogger(settings.PRIMARY_LOGGER_NAME)
+
 
 @permission_classes([AllowAny])
 class ActivateAccount(views.APIView):
@@ -35,7 +42,7 @@ class ActivateAccount(views.APIView):
         if user and user.is_active:
             return Response(
                 {"message": "Account already activated!"},
-                status=200,
+                status=status.HTTP_200_OK,
             )
 
         if user is not None and AccountActivationTokenGenerator().check_token(user, token):
@@ -50,14 +57,15 @@ class ActivateAccount(views.APIView):
             )
             return Response(
                 {"message": "User activated successfully"},
-                status=200,
+                status=status.HTTP_200_OK,
             )
         else:
             logger.error(f"User: {user}; activation failed!")
             return Response(
                 {"error": "Activation link is invalid!"},
-                status=400,
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
 
 class Logout(APIView):
     def post(self, request, format=None):
@@ -68,7 +76,7 @@ class Logout(APIView):
 class AuthCheck(APIView):
     def get(self, request):
         if request.user.is_anonymous:
-            return Response({}, status=401)
+            return Response({}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response(
                 {
@@ -76,21 +84,27 @@ class AuthCheck(APIView):
                     "email": request.user.email,
                     "preferred_name": request.user.profile.preferred_name,
                 },
-                status=200,
+                status=status.HTTP_200_OK,
             )
 
 
 class Login(APIView):
     permission_classes = [AllowAny]
-    @extend_schema(
-        request=LoginSerializer,
-    )
 
+    @extend_schema(
+        request=LoginRequestSerializer,
+        responses={
+            200: LoginResponseSerializer,
+            400: MessageResponseSerializer,
+        },
+    )
     def post(self, request, format=None):
 
-        serializer = LoginSerializer(data=request.data)
+        serializer = LoginRequestSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.get_simple_error(), status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": serializer.get_simple_error()}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         username = serializer.validated_data.get("username")
         password = serializer.validated_data.get("password")
@@ -101,14 +115,13 @@ class Login(APIView):
             result = {
                 "token": token.key,
                 "username": user.username,
-                "email": user.email,
                 "preferred_name": user.profile.preferred_name,
             }
 
             return Response(result)
         else:
             return Response(
-                {"error": "Invalid credentials or account not activated yet"},
+                {"message": "Invalid credentials or account not activated yet"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -116,8 +129,15 @@ class Login(APIView):
 class SignUp(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        request=SignUpRequestSerializer,
+        responses={
+            201: SignUpResponseSerializer,
+            400: MessageResponseSerializer,
+        },
+    )
     def post(self, request):
-        serializer = SignUpSerializer(data=request.data)
+        serializer = SignUpRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
                 user = serializer.save()
@@ -134,7 +154,6 @@ class SignUp(APIView):
                     subject=f"Activate {settings.APP_NAME} Account",
                     activate_link=(f"{settings.FRONTEND_URL}/activate_account/{user.id}/{token}"),
                 )
-
 
                 return Response(
                     {
@@ -153,7 +172,7 @@ class SignUp(APIView):
                 )
                 return Response(
                     {
-                        "error": "An error occurred while creating your account. Please try again later or contact support for assistance."
+                        "message": "An error occurred while creating your account. Please try again later or contact support for assistance."
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
@@ -164,5 +183,6 @@ class SignUp(APIView):
                     "error": serializer.errors,
                 }
             )
-            # flatte
-            return Response(serializer.get_simple_error(), status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": serializer.get_simple_error()}, status=status.HTTP_400_BAD_REQUEST
+            )

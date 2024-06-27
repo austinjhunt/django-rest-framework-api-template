@@ -22,14 +22,14 @@ class EditProfile(views.APIView):
             if user.is_anonymous:
                 return Response(
                     {},
-                    status=401,
+                    status=status.HTTP_401_UNAUTHORIZED,
                 )
 
             # verify that keys are present in request.data
             if not request.data.get("basic_info"):
                 return Response(
                     {"error": f"Invalid request data"},
-                    status=400,
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
             response = {}
@@ -48,12 +48,12 @@ class EditProfile(views.APIView):
                     "bio": user.profile.bio,
                 }
 
-            return Response(response, status=200)
+            return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(e)
             return Response(
                 {"error": f"Could not update profile"},
-                status=400,
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
 
@@ -64,7 +64,7 @@ class GetProfile(views.APIView):
             if user.is_anonymous:
                 return Response(
                     {},
-                    status=401,
+                    status=status.HTTP_401_UNAUTHORIZED,
                 )
             profile = user.profile
             return Response(
@@ -74,11 +74,11 @@ class GetProfile(views.APIView):
                     "email": user.email,
                     "profile": profile.format_json()
                 },
-                status=200,
+                status=status.HTTP_200_OK,
             )
         except Exception as e:
             logger.error(e)
             return Response(
                 {"error": f"Could not get profile"},
-                status=400,
+                status=status.HTTP_400_BAD_REQUEST,
             )

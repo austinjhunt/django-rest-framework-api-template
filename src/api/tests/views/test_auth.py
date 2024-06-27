@@ -1,4 +1,5 @@
 # Path: project/api/tests/views/test_auth.py
+
 from rest_framework import status
 from django.urls import reverse
 from django.contrib.auth.models import User

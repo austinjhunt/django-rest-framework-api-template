@@ -1,4 +1,4 @@
-# Path: project/api/tests/unit/test_create_user.py
+# Path: project/api/tests/unit/test_util.py
 
 from api.tests.base import (
     BaseTestCase,

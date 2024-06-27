@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(settings.PRIMARY_LOGGER_NAME)
 
 
-class SignUpSerializer(BaseSerializer):
+class SignUpRequestSerializer(BaseSerializer):
 
     first_name = serializers.CharField()
     last_name = serializers.CharField()
@@ -43,8 +43,12 @@ class SignUpSerializer(BaseSerializer):
         profile.save()
         return user
 
+class SignUpResponseSerializer(BaseSerializer):
+    message = serializers.CharField()
+    user_id = serializers.UUIDField()
+    token = serializers.CharField()
 
-class LoginSerializer(BaseSerializer):
+class LoginRequestSerializer(BaseSerializer):
     username = serializers.CharField()
     password = serializers.CharField()
 
@@ -60,3 +64,8 @@ class LoginSerializer(BaseSerializer):
             )
             raise serializers.ValidationError("A user with this username does not exist.")
         return data
+
+class LoginResponseSerializer(BaseSerializer):
+    token = serializers.CharField()
+    username = serializers.CharField()
+    preferred_name = serializers.CharField()
