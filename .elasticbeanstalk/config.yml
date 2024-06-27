@@ -1,21 +1,18 @@
 branch-defaults:
-  add-github-action:
-    environment: digibooks-backend-dev
-    group_suffix: null
-  add-log-out:
-    environment: digibooks-backend-dev
+  main:
+    environment: production-environment-name-changeme
     group_suffix: null
 global:
-  application_name: digibooks-backend
+  application_name: ebs-application-name-changeme
   branch: null
-  default_ec2_keyname: null
-  default_platform: Python 3.11 running on 64bit Amazon Linux 2023
-  default_region: us-west-2
+  default_ec2_keyname: ebs-ec2-instance-keypair-name-changeme
+  default_platform: Python 3.11 running on 64bit Amazon Linux 2
+  default_region: us-east-2
   include_git_submodules: true
   instance_profile: null
   platform_name: null
   platform_version: null
-  profile: novabrains
+  profile: null
   repository: null
   sc: git
   workspace_type: Application

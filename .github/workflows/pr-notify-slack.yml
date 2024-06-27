@@ -1,9 +1,10 @@
-name: Notify members of PR
+name: Notify members of PR upon review request
 on:
   pull_request:
     types:
       - review_requested
 jobs:
+  # CHANGEME: Add conditions for each reviewer; add their Slack ID to notify them if they are requested to review a PR
   amhajja_notify:
     runs-on: ubuntu-latest
     if: ${{ github.event.requested_reviewer.login == 'amhajja'}}
