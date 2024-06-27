@@ -36,7 +36,10 @@ class ActivateAccount(views.APIView):
         try:
             user = User.objects.get(pk=uidb64)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
-            logger.error(e)
+            logger.error({
+                'action': 'ActivateAccount.get',
+                'error': str(e)
+            })
             user = None
 
         if user and user.is_active:
